@@ -52,7 +52,7 @@ window.AppConfig = Object.freeze({
 
   /* Storage Keys */
   STORAGE: {
-    OLLAMA_URL: 'umrani_ollama_url',
+    SERVER_URL: 'umrani_server_url',
     SETTINGS: 'umrani_settings',
     CHATS: 'umrani_chats',
     CURRENT_CHAT: 'umrani_current_chat',
@@ -75,7 +75,7 @@ window.AppConfig = Object.freeze({
   /* Themes */
   THEMES: ['dark', 'light', 'oled', 'cyber', 'blue', 'purple', 'green', 'glass'],
 
-  /* Ollama endpoints */
+  /* API endpoints */
   ENDPOINTS: {
     TAGS: '/api/tags',
     CHAT: '/api/chat',
@@ -86,12 +86,12 @@ window.AppConfig = Object.freeze({
     PS: '/api/ps',
   },
 
-  /* Suggestions for welcome screen */
+  /* Welcome screen suggestions */
   SUGGESTIONS: [
-    { icon: 'fa-code', title: 'Write Code', desc: 'Get help writing, reviewing, or debugging code in any language' },
-    { icon: 'fa-pen-fancy', title: 'Creative Writing', desc: 'Stories, essays, poems and more with your creative assistant' },
+    { icon: 'fa-code',        title: 'Write Code',        desc: 'Get help writing, reviewing, or debugging code in any language' },
+    { icon: 'fa-pen-fancy',   title: 'Creative Writing',  desc: 'Stories, essays, poems and more with your creative assistant' },
     { icon: 'fa-magnifying-glass', title: 'Research & Analysis', desc: 'Analyze data, summarize documents, explore complex topics' },
-    { icon: 'fa-robot', title: 'Brainstorm Ideas', desc: 'Generate ideas, explore concepts, think through problems' },
+    { icon: 'fa-robot',       title: 'Brainstorm Ideas',  desc: 'Generate ideas, explore concepts, think through problems' },
   ],
 
   /* Reaction emojis */

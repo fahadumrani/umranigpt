@@ -13,9 +13,7 @@ window.AppStorage = (() => {
       const raw = localStorage.getItem(key);
       if (raw === null) return fallback;
       return safeJsonParse(raw, raw);
-    } catch {
-      return fallback;
-    }
+    } catch { return fallback; }
   };
 
   const set = (key, value) => {
@@ -24,34 +22,38 @@ window.AppStorage = (() => {
       return true;
     } catch (e) {
       if (e.name === 'QuotaExceededError') {
-        console.warn('Storage quota exceeded, purging old chats...');
         purgeOldChats();
-        try {
-          localStorage.setItem(key, safeJsonStringify(value));
-          return true;
-        } catch { return false; }
+        try { localStorage.setItem(key, safeJsonStringify(value)); return true; }
+        catch { return false; }
       }
       return false;
     }
   };
 
-  const remove = (key) => {
-    try { localStorage.removeItem(key); return true; }
-    catch { return false; }
+  const remove = (key) => { try { localStorage.removeItem(key); return true; } catch { return false; } };
+  const clear  = (prefix = null) => {
+    if (!prefix) { localStorage.clear(); return; }
+    Object.keys(localStorage).filter(k => k.startsWith(prefix)).forEach(k => localStorage.removeItem(k));
   };
 
-  const clear = (prefix = null) => {
-    if (!prefix) {
-      localStorage.clear();
-      return;
-    }
-    const keys = Object.keys(localStorage).filter(k => k.startsWith(prefix));
-    keys.forEach(k => localStorage.removeItem(k));
+  /* ---- Server URL
+   *  Priority: 1) window.UMRANI_SERVER_URL (set in index.html)
+   *            2) localStorage fallback
+   * ---- */
+  const getServerUrl = () => {
+    // Read from the HTML-level config first
+    const hardcoded = window.UMRANI_SERVER_URL || '';
+    if (hardcoded) return hardcoded.trim().replace(/\/+$/, '');
+    // Fallback to any previously stored value
+    return get(STORAGE.SERVER_URL, '');
   };
 
-  /* ---- Ollama URL ---- */
-  const getOllamaUrl = () => get(STORAGE.OLLAMA_URL, '');
-  const setOllamaUrl = (url) => set(STORAGE.OLLAMA_URL, url);
+  /* kept for compatibility — writes to localStorage only (not used when hardcoded) */
+  const setServerUrl = (url) => set(STORAGE.SERVER_URL, url);
+
+  /* Legacy aliases so other modules still work unchanged */
+  const getOllamaUrl = getServerUrl;
+  const setOllamaUrl = setServerUrl;
 
   /* ---- Settings ---- */
   const getSettings = () => {
@@ -79,147 +81,63 @@ window.AppStorage = (() => {
       language: cfg.DEFAULT_LANGUAGE,
       sidebarOpen: cfg.DEFAULT_SIDEBAR_OPEN,
     };
-    const stored = get(STORAGE.SETTINGS, {});
-    return { ...defaults, ...stored };
+    return { ...defaults, ...get(STORAGE.SETTINGS, {}) };
   };
 
-  const setSettings = (settings) => set(STORAGE.SETTINGS, settings);
-
-  const updateSetting = (key, value) => {
-    const settings = getSettings();
-    settings[key] = value;
-    return setSettings(settings);
-  };
+  const setSettings    = (s) => set(STORAGE.SETTINGS, s);
+  const updateSetting  = (key, value) => { const s = getSettings(); s[key] = value; return setSettings(s); };
 
   /* ---- Chats ---- */
-  const getChats = () => {
-    const data = get(STORAGE.CHATS, {});
-    return typeof data === 'object' && !Array.isArray(data) ? data : {};
-  };
+  const getChats    = () => { const d = get(STORAGE.CHATS, {}); return (typeof d === 'object' && !Array.isArray(d)) ? d : {}; };
+  const setChats    = (c) => set(STORAGE.CHATS, c);
+  const getChat     = (id) => getChats()[id] || null;
+  const saveChat    = (chat) => { if (!chat?.id) return false; const c = getChats(); c[chat.id] = { ...chat, updatedAt: Date.now() }; return setChats(c); };
+  const deleteChat  = (id) => { const c = getChats(); delete c[id]; return setChats(c); };
+  const getAllChats  = () => Object.values(getChats()).sort((a,b) => (b.updatedAt||0)-(a.updatedAt||0));
 
-  const setChats = (chats) => set(STORAGE.CHATS, chats);
-
-  const getChat = (id) => {
-    const chats = getChats();
-    return chats[id] || null;
-  };
-
-  const saveChat = (chat) => {
-    if (!chat?.id) return false;
-    const chats = getChats();
-    chats[chat.id] = { ...chat, updatedAt: Date.now() };
-    return setChats(chats);
-  };
-
-  const deleteChat = (id) => {
-    const chats = getChats();
-    delete chats[id];
-    return setChats(chats);
-  };
-
-  const getAllChats = () => {
-    const chats = getChats();
-    return Object.values(chats).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-  };
-
-  const getCurrentChatId = () => get(STORAGE.CURRENT_CHAT, null);
-  const setCurrentChatId = (id) => set(STORAGE.CURRENT_CHAT, id);
+  const getCurrentChatId  = () => get(STORAGE.CURRENT_CHAT, null);
+  const setCurrentChatId  = (id) => set(STORAGE.CURRENT_CHAT, id);
 
   /* ---- Folders ---- */
-  const getFolders = () => get(STORAGE.FOLDERS, []);
-  const setFolders = (folders) => set(STORAGE.FOLDERS, folders);
-
-  const addFolder = (name) => {
-    const folders = getFolders();
-    const folder = { id: window.AppUtils.generateId(), name, chatIds: [], createdAt: Date.now() };
-    folders.push(folder);
-    setFolders(folders);
-    return folder;
-  };
-
-  const deleteFolder = (folderId) => {
-    const folders = getFolders().filter(f => f.id !== folderId);
-    setFolders(folders);
-  };
-
+  const getFolders  = () => get(STORAGE.FOLDERS, []);
+  const setFolders  = (f) => set(STORAGE.FOLDERS, f);
+  const addFolder   = (name) => { const f = getFolders(); const folder = { id: window.AppUtils.generateId(), name, chatIds: [], createdAt: Date.now() }; f.push(folder); setFolders(f); return folder; };
+  const deleteFolder = (id) => setFolders(getFolders().filter(f => f.id !== id));
   const moveChatToFolder = (chatId, folderId) => {
     const folders = getFolders();
-    // Remove from all folders first
     folders.forEach(f => { f.chatIds = f.chatIds.filter(id => id !== chatId); });
-    if (folderId) {
-      const folder = folders.find(f => f.id === folderId);
-      if (folder && !folder.chatIds.includes(chatId)) folder.chatIds.push(chatId);
-    }
+    if (folderId) { const f = folders.find(f => f.id === folderId); if (f && !f.chatIds.includes(chatId)) f.chatIds.push(chatId); }
     setFolders(folders);
   };
 
   /* ---- Pinned ---- */
-  const getPinned = () => get(STORAGE.PINNED, []);
-  const setPinned = (ids) => set(STORAGE.PINNED, ids);
-
-  const pinChat = (id) => {
-    const pinned = getPinned();
-    if (!pinned.includes(id)) { pinned.unshift(id); setPinned(pinned); }
-  };
-
-  const unpinChat = (id) => {
-    const pinned = getPinned().filter(p => p !== id);
-    setPinned(pinned);
-  };
-
+  const getPinned   = () => get(STORAGE.PINNED, []);
+  const setPinned   = (ids) => set(STORAGE.PINNED, ids);
+  const pinChat     = (id) => { const p = getPinned(); if (!p.includes(id)) { p.unshift(id); setPinned(p); } };
+  const unpinChat   = (id) => setPinned(getPinned().filter(p => p !== id));
   const isChatPinned = (id) => getPinned().includes(id);
 
   /* ---- Favourites ---- */
-  const getFavourites = () => get(STORAGE.FAVORITES, []);
-  const setFavourites = (ids) => set(STORAGE.FAVORITES, ids);
-
-  const toggleFavourite = (id) => {
-    const favs = getFavourites();
-    const idx = favs.indexOf(id);
-    if (idx === -1) favs.unshift(id);
-    else favs.splice(idx, 1);
-    setFavourites(favs);
-    return idx === -1;
-  };
-
+  const getFavourites  = () => get(STORAGE.FAVORITES, []);
+  const setFavourites  = (ids) => set(STORAGE.FAVORITES, ids);
+  const toggleFavourite = (id) => { const f = getFavourites(); const i = f.indexOf(id); if (i===-1) f.unshift(id); else f.splice(i,1); setFavourites(f); return i===-1; };
   const isChatFavourite = (id) => getFavourites().includes(id);
 
-  /* ---- Purge old chats to free space ---- */
+  /* ---- Purge ---- */
   const purgeOldChats = () => {
-    const chats = getAllChats();
-    const max = window.AppConfig.MAX_HISTORY_ITEMS;
-    if (chats.length > max) {
-      const toDelete = chats.slice(max);
-      const remaining = getChats();
-      toDelete.forEach(c => delete remaining[c.id]);
-      setChats(remaining);
-    }
+    const all = getAllChats(); const max = window.AppConfig.MAX_HISTORY_ITEMS;
+    if (all.length > max) { const rem = getChats(); all.slice(max).forEach(c => delete rem[c.id]); setChats(rem); }
   };
 
   /* ---- Export / Import ---- */
-  const exportAllData = () => {
-    return {
-      version: window.AppConfig.VERSION,
-      exportedAt: Date.now(),
-      settings: getSettings(),
-      chats: getAllChats(),
-      folders: getFolders(),
-      pinned: getPinned(),
-      favourites: getFavourites(),
-    };
-  };
-
+  const exportAllData = () => ({ version: window.AppConfig.VERSION, exportedAt: Date.now(), settings: getSettings(), chats: getAllChats(), folders: getFolders(), pinned: getPinned(), favourites: getFavourites() });
   const importData = (data) => {
     if (!data || typeof data !== 'object') return false;
     try {
       if (data.settings) setSettings(data.settings);
-      if (Array.isArray(data.chats)) {
-        const chats = {};
-        data.chats.forEach(c => { if (c?.id) chats[c.id] = c; });
-        setChats(chats);
-      }
-      if (Array.isArray(data.folders)) setFolders(data.folders);
-      if (Array.isArray(data.pinned)) setPinned(data.pinned);
+      if (Array.isArray(data.chats)) { const c = {}; data.chats.forEach(ch => { if (ch?.id) c[ch.id] = ch; }); setChats(c); }
+      if (Array.isArray(data.folders))    setFolders(data.folders);
+      if (Array.isArray(data.pinned))     setPinned(data.pinned);
       if (Array.isArray(data.favourites)) setFavourites(data.favourites);
       return true;
     } catch { return false; }
@@ -228,12 +146,13 @@ window.AppStorage = (() => {
   /* ---- Sidebar ---- */
   const getSidebarWidth = () => get(STORAGE.SIDEBAR_WIDTH, null);
   const setSidebarWidth = (w) => set(STORAGE.SIDEBAR_WIDTH, w);
-  const getSidebarOpen = () => get(STORAGE.SIDEBAR_OPEN, true);
-  const setSidebarOpen = (v) => set(STORAGE.SIDEBAR_OPEN, v);
+  const getSidebarOpen  = () => get(STORAGE.SIDEBAR_OPEN, true);
+  const setSidebarOpen  = (v) => set(STORAGE.SIDEBAR_OPEN, v);
 
   return {
     get, set, remove, clear,
-    getOllamaUrl, setOllamaUrl,
+    getServerUrl, setServerUrl,
+    getOllamaUrl, setOllamaUrl,          // legacy aliases
     getSettings, setSettings, updateSetting,
     getChats, setChats, getChat, saveChat, deleteChat, getAllChats,
     getCurrentChatId, setCurrentChatId,

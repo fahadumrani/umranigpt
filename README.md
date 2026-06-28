@@ -11,7 +11,7 @@ beautiful as ChatGPT, private as your local machine.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](#license)
 [![PWA Ready](https://img.shields.io/badge/PWA-Ready-blue.svg)](#pwa)
-[![Ollama](https://img.shields.io/badge/Backend-Ollama-orange.svg)](https://ollama.ai)
+[![Local AI](https://img.shields.io/badge/Backend-Local_AI-orange.svg)]
 
 </div>
 
@@ -53,7 +53,7 @@ beautiful as ChatGPT, private as your local machine.
 | Glass | Frosted glass morphism |
 
 ### ⚙️ Settings
-- Configurable **Ollama URL** — supports Cloudflare Tunnel
+- Configurable **Server URL** — supports Cloudflare Tunnel
 - **Connection tester** with latency measurement
 - Full **model parameter** control (temperature, top-p, top-k, repeat penalty, seed, context)
 - **System prompt** configuration
@@ -78,7 +78,7 @@ beautiful as ChatGPT, private as your local machine.
 ## 🚀 Setup
 
 ### Prerequisites
-- [Ollama](https://ollama.ai) installed and running locally
+- A local AI server (e.g. Ollama) installed and running
 - [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/) for tunnel
 - A web host (GitHub Pages, Netlify, etc.)
 
@@ -94,10 +94,10 @@ cd umranigpt
 
 ```bash
 # Pull a model
-ollama pull llama3.2
+# pull a model via your AI server CLI
 
 # Serve with CORS enabled
-OLLAMA_ORIGINS="*" ollama serve
+# start your AI server with CORS enabled
 ```
 
 ### 3 — Create Cloudflare Tunnel
@@ -112,7 +112,7 @@ cloudflared tunnel --url http://localhost:11434
 
 1. Open UmraniGPT in your browser
 2. Click **Settings** (gear icon or `Ctrl+,`)
-3. Paste your tunnel URL in **Connection → Ollama URL**
+3. Paste your tunnel URL in **Connection → Server URL**
 4. Click **Save**, then **Test Connection**
 5. Select a model from the header dropdown
 6. Start chatting! 🎉
@@ -126,7 +126,7 @@ Browser (GitHub Pages)
        ↓  HTTPS
 Cloudflare Tunnel
        ↓  localhost
-Local Ollama  (:11434)
+Local AI Server  (:11434)
        ↓
 Your GPU / CPU
 ```
@@ -177,7 +177,7 @@ umranigpt/
 │   └── app.js          # Bootstrap — initialises all modules
 │
 ├── services/
-│   ├── ollama.js       # Ollama API wrapper (tags, chat, generate)
+│   ├── ollama.js       # AI server API wrapper (tags, chat, generate)
 │   └── stream.js       # Streaming fetch handler (SSE/NDJSON)
 │
 └── assets/
@@ -192,7 +192,7 @@ umranigpt/
 ### Supported Ollama Endpoints
 | Endpoint | Purpose |
 |----------|---------|
-| `GET /api/tags` | List installed models |
+| `GET /api/tags`    | List installed models |
 | `POST /api/chat` | Streaming chat (primary) |
 | `POST /api/generate` | Text generation |
 | `POST /api/show` | Model details |
@@ -223,7 +223,7 @@ umranigpt/
 - **Local-first** — all data in your browser's LocalStorage
 - **DOMPurify** sanitises all rendered HTML
 - **Content Security** via strict attribute filtering
-- All Ollama communication goes through your own tunnel
+- All AI server communication goes through your own tunnel
 
 ---
 
