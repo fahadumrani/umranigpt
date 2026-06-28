@@ -1,4 +1,3 @@
-﻿// Model state
 /* ============================================
    UMRANIGPT - Model Manager
    ============================================ */
@@ -17,14 +16,14 @@ window.AppModels = (() => {
     renderSelector();
   };
 
-  /* ---- Fetch models from the backend ---- */
+  /* ---- Fetch models from Ollama ---- */
   const refresh = async () => {
     if (isLoading) return;
     isLoading = true;
     setLoading(true);
 
     try {
-      models = await window.OllamaService.listModels();
+      models = await OllamaService.listModels();
       renderOptions();
 
       if (models.length === 0) {

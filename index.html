@@ -1,20 +1,16 @@
-<<<<<<< HEAD
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <meta name="description" content="UmraniGPT — A personal AI assistant">
+  <meta name="description" content="UmraniGPT — A premium AI assistant powered by Ollama">
   <meta name="theme-color" content="#0a0a0f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="UmraniGPT">
   <meta property="og:title" content="UmraniGPT">
-  <meta property="og:description" content="Personal AI assistant for local and hosted AI workflows">
+  <meta property="og:description" content="Premium AI assistant powered by Ollama">
   <title>UmraniGPT</title>
-  <script>
-    window.OLLAMA_BASE_URL = 'https://loud-delivers-liabilities-agencies.trycloudflare.com';
-  </script>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
@@ -200,6 +196,11 @@
 
     <!-- Sidebar Footer -->
     <div class="sidebar-footer">
+      <button class="sidebar-footer-btn" id="settings-footer-btn" aria-label="Open settings">
+        <i class="fa-solid fa-gear"></i>
+        <span>Settings</span>
+        <span style="margin-left:auto;font-size:10px;opacity:0.5;">Ctrl+,</span>
+      </button>
       <button class="sidebar-footer-btn" id="theme-footer-btn" aria-label="Cycle theme">
         <i class="fa-solid fa-palette"></i>
         <span>Theme</span>
@@ -209,6 +210,10 @@
         <i class="fa-solid fa-keyboard"></i>
         <span>Shortcuts</span>
         <span style="margin-left:auto;font-size:10px;opacity:0.5;">Ctrl+/</span>
+      </button>
+      <button class="sidebar-footer-btn" id="export-all-footer-btn" aria-label="Export all chats">
+        <i class="fa-solid fa-file-export"></i>
+        <span>Export All</span>
       </button>
     </div>
 
@@ -251,6 +256,11 @@
           <span class="latency-pill" id="status-latency" style="display:none;"></span>
         </div>
 
+        <!-- Export -->
+        <button class="btn-icon" id="export-chat-btn" title="Export chat" aria-label="Export current chat" data-tooltip="Export">
+          <i class="fa-solid fa-download"></i>
+        </button>
+
         <!-- Clear -->
         <button class="btn-icon" id="clear-chat-btn" title="Clear chat" aria-label="Clear current chat" data-tooltip="Clear chat">
           <i class="fa-solid fa-trash-can"></i>
@@ -277,7 +287,7 @@
           </svg>
         </div>
         <h1 class="welcome-title">How can I help you today?</h1>
-        <p class="welcome-subtitle">Private, fast, and fully under your control.</p>
+        <p class="welcome-subtitle">Powered by your local Ollama instance. Private, fast, and fully under your control.</p>
         <div class="suggestion-grid" role="list" aria-label="Suggestion prompts"></div>
       </div>
 
@@ -346,6 +356,309 @@
   </main>
 </div>
 
+<!-- ============================================
+     SETTINGS MODAL
+============================================ -->
+<div class="modal-overlay" id="settings-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+  <div class="modal" id="settings-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="settings-title">
+        <i class="fa-solid fa-gear" aria-hidden="true"></i>
+        Settings
+      </div>
+      <button class="modal-close" aria-label="Close settings">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="settings-layout">
+
+        <!-- Settings Sidebar Nav -->
+        <nav class="settings-sidebar" aria-label="Settings sections">
+          <div class="settings-nav-item active" data-panel="connection">
+            <i class="fa-solid fa-plug"></i><span>Connection</span>
+          </div>
+          <div class="settings-nav-item" data-panel="model">
+            <i class="fa-solid fa-sliders"></i><span>Model</span>
+          </div>
+          <div class="settings-nav-item" data-panel="appearance">
+            <i class="fa-solid fa-palette"></i><span>Appearance</span>
+          </div>
+          <div class="settings-nav-item" data-panel="voice">
+            <i class="fa-solid fa-microphone"></i><span>Voice</span>
+          </div>
+          <div class="settings-nav-item" data-panel="data">
+            <i class="fa-solid fa-database"></i><span>Data</span>
+          </div>
+        </nav>
+
+        <!-- ---- Connection Panel ---- -->
+        <section class="settings-panel active" id="panel-connection" aria-label="Connection settings">
+
+          <div class="settings-section">
+            <div class="settings-section-title">Ollama Server</div>
+
+            <div style="display:flex;flex-direction:column;gap:var(--space-3);">
+              <div class="settings-row">
+                <div class="settings-row-label">
+                  <span>Ollama URL</span>
+                  <small>Your Cloudflare Tunnel or local URL for Ollama</small>
+                </div>
+              </div>
+              <div class="url-input-group">
+                <input type="url" id="ollama-url-input" class="form-input"
+                  placeholder="https://your-tunnel.trycloudflare.com"
+                  autocomplete="off" spellcheck="false">
+                <button class="btn-secondary" id="save-url-btn" aria-label="Save URL">
+                  <i class="fa-solid fa-floppy-disk"></i> Save
+                </button>
+              </div>
+              <div id="url-test-result" class="url-test-result" style="display:none;" role="alert"></div>
+
+              <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;">
+                <button class="btn-secondary" id="test-connection-btn">
+                  <i class="fa-solid fa-plug"></i> Test Connection
+                </button>
+                <button class="btn-secondary" id="ping-btn">
+                  <i class="fa-solid fa-satellite-dish"></i> Ping
+                </button>
+                <button class="btn-secondary" id="refresh-models-btn">
+                  <i class="fa-solid fa-rotate"></i> Refresh Models
+                </button>
+                <button class="btn-danger" id="delete-url-btn">
+                  <i class="fa-solid fa-trash"></i> Remove URL
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-title">Architecture Guide</div>
+            <div style="background:var(--surface-1);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:var(--space-4);font-size:var(--text-sm);color:var(--text-secondary);line-height:1.8;">
+              <div style="font-family:var(--font-mono);font-size:12px;color:var(--accent-primary);white-space:pre-line;">Browser → GitHub Pages → Cloudflare Tunnel → Local Ollama</div>
+              <p style="margin-top:var(--space-3);">Run Ollama locally, expose it via <strong style="color:var(--text-primary);">cloudflared tunnel</strong>, then paste the tunnel URL above. Your data stays private on your machine.</p>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ---- Model Panel ---- -->
+        <section class="settings-panel" id="panel-model" aria-label="Model settings">
+
+          <div class="settings-section">
+            <div class="settings-section-title">Generation Parameters</div>
+
+            <div class="settings-row">
+              <div class="settings-row-label"><span>Temperature</span><small>Controls randomness (0 = focused, 2 = creative)</small></div>
+              <div class="settings-row-control">
+                <div class="form-range-wrap" style="width:180px;">
+                  <input type="range" class="form-range" id="temperature-range" min="0" max="2" step="0.05" value="0.7">
+                  <span class="range-value" id="temperature-val">0.7</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label"><span>Top-P</span><small>Nucleus sampling probability</small></div>
+              <div class="settings-row-control">
+                <div class="form-range-wrap" style="width:180px;">
+                  <input type="range" class="form-range" id="top-p-range" min="0" max="1" step="0.05" value="0.9">
+                  <span class="range-value" id="top-p-val">0.9</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label"><span>Top-K</span><small>Limits token selection pool</small></div>
+              <div class="settings-row-control">
+                <div class="form-range-wrap" style="width:180px;">
+                  <input type="range" class="form-range" id="top-k-range" min="1" max="100" step="1" value="40">
+                  <span class="range-value" id="top-k-val">40</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label"><span>Repeat Penalty</span><small>Penalises repeated tokens</small></div>
+              <div class="settings-row-control">
+                <div class="form-range-wrap" style="width:180px;">
+                  <input type="range" class="form-range" id="repeat-penalty-range" min="1" max="2" step="0.05" value="1.1">
+                  <span class="range-value" id="repeat-penalty-val">1.1</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label"><span>Context Length</span><small>Maximum tokens in context window</small></div>
+              <div class="settings-row-control">
+                <input type="number" class="form-input" id="context-length-input" min="512" max="131072" step="512" value="4096" style="width:100px;">
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label"><span>Seed</span><small>-1 for random, fixed for reproducibility</small></div>
+              <div class="settings-row-control">
+                <input type="number" class="form-input" id="seed-input" min="-1" max="2147483647" value="-1" style="width:100px;">
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label"><span>Streaming</span><small>Show response as it's generated</small></div>
+              <div class="settings-row-control">
+                <label class="toggle-switch"><input type="checkbox" id="streaming-toggle" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-title">System Prompt</div>
+            <textarea class="form-input" id="system-prompt-input" rows="4" placeholder="Optional system prompt to set context or behaviour…" style="resize:vertical;font-family:var(--font-primary);"></textarea>
+          </div>
+
+          <button class="btn-secondary" id="reset-params-btn">
+            <i class="fa-solid fa-rotate-left"></i> Reset to Defaults
+          </button>
+
+        </section>
+
+        <!-- ---- Appearance Panel ---- -->
+        <section class="settings-panel" id="panel-appearance" aria-label="Appearance settings">
+
+          <div class="settings-section">
+            <div class="settings-section-title">Theme</div>
+            <div id="theme-grid" class="theme-grid" role="radiogroup" aria-label="Select theme"></div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-title">Display</div>
+
+            <div class="settings-row">
+              <div class="settings-row-label"><span>Font Size</span><small>Base font size in pixels</small></div>
+              <div class="settings-row-control">
+                <div class="form-range-wrap" style="width:160px;">
+                  <input type="range" class="form-range" id="font-size-range" min="12" max="20" step="1" value="15">
+                  <span class="range-value" id="font-size-val">15px</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label"><span>Animations</span><small>Enable UI transitions and effects</small></div>
+              <div class="settings-row-control">
+                <label class="toggle-switch"><input type="checkbox" id="animations-toggle" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label"><span>Timestamps</span><small>Show message timestamps</small></div>
+              <div class="settings-row-control">
+                <label class="toggle-switch"><input type="checkbox" id="timestamps-toggle" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label"><span>Line Numbers</span><small>Show line numbers in code blocks</small></div>
+              <div class="settings-row-control">
+                <label class="toggle-switch"><input type="checkbox" id="line-numbers-toggle" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ---- Voice Panel ---- -->
+        <section class="settings-panel" id="panel-voice" aria-label="Voice settings">
+
+          <div class="settings-section">
+            <div class="settings-section-title">Speech Recognition</div>
+            <div style="padding:var(--space-3);background:var(--surface-1);border:1px solid var(--border-default);border-radius:var(--radius-md);font-size:var(--text-sm);color:var(--text-secondary);">
+              <i class="fa-solid fa-microphone" style="color:var(--accent-primary);margin-right:8px;"></i>
+              Voice input uses your browser's built-in speech recognition. Click the microphone button in the chat input to start.
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-title">Text-to-Speech</div>
+
+            <div class="settings-row">
+              <div class="settings-row-label"><span>Voice</span><small>Select a speech synthesis voice</small></div>
+              <div class="settings-row-control">
+                <select class="form-select" id="voice-select" style="width:200px;"></select>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label"><span>Speed</span></div>
+              <div class="settings-row-control">
+                <div class="form-range-wrap" style="width:160px;">
+                  <input type="range" class="form-range" id="voice-speed-range" min="0.5" max="2" step="0.1" value="1">
+                  <span class="range-value" id="voice-speed-val">1</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label"><span>Pitch</span></div>
+              <div class="settings-row-control">
+                <div class="form-range-wrap" style="width:160px;">
+                  <input type="range" class="form-range" id="voice-pitch-range" min="0.5" max="2" step="0.1" value="1">
+                  <span class="range-value" id="voice-pitch-val">1</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label"><span>Volume</span></div>
+              <div class="settings-row-control">
+                <div class="form-range-wrap" style="width:160px;">
+                  <input type="range" class="form-range" id="voice-volume-range" min="0" max="1" step="0.05" value="1">
+                  <span class="range-value" id="voice-volume-val">1</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:var(--space-2);">
+              <button class="btn-secondary" id="test-voice-btn"><i class="fa-solid fa-play"></i> Test Voice</button>
+              <button class="btn-secondary" id="stop-voice-btn"><i class="fa-solid fa-stop"></i> Stop</button>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ---- Data Panel ---- -->
+        <section class="settings-panel" id="panel-data" aria-label="Data and privacy settings">
+
+          <div class="settings-section">
+            <div class="settings-section-title">Statistics</div>
+            <div id="data-stats"></div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-title">Import & Export</div>
+            <div style="display:flex;flex-direction:column;gap:var(--space-2);">
+              <button class="btn-secondary" id="export-all-btn"><i class="fa-solid fa-file-export"></i> Export All Chats (JSON)</button>
+              <button class="btn-secondary" id="import-all-btn"><i class="fa-solid fa-file-import"></i> Import Chats (JSON)</button>
+              <button class="btn-secondary" id="backup-settings-btn"><i class="fa-solid fa-floppy-disk"></i> Backup Settings</button>
+              <button class="btn-secondary" id="restore-settings-btn"><i class="fa-solid fa-upload"></i> Restore Settings</button>
+            </div>
+          </div>
+
+          <div class="settings-section danger-zone">
+            <div class="danger-zone-title"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</div>
+            <div style="display:flex;flex-direction:column;gap:var(--space-2);">
+              <button class="btn-danger" id="clear-history-btn"><i class="fa-solid fa-trash"></i> Clear All Chat History</button>
+              <button class="btn-danger" id="clear-settings-btn"><i class="fa-solid fa-rotate-left"></i> Reset All Settings</button>
+            </div>
+          </div>
+
+        </section>
+
+      </div><!-- /settings-layout -->
+    </div><!-- /modal-body -->
+
+  </div><!-- /modal -->
+</div><!-- /settings-overlay -->
 
 <!-- ============================================
      SCRIPTS — load in dependency order
@@ -377,6 +690,7 @@
 <script src="js/dragdrop.js"></script>
 <script src="js/history.js"></script>
 <script src="js/sidebar.js"></script>
+<script src="js/settings.js"></script>
 <script src="js/shortcuts.js"></script>
 <script src="js/chat.js"></script>
 <script src="js/ui.js"></script>
@@ -400,86 +714,3 @@
 
 </body>
 </html>
-=======
-<!DOCTYPE html>
-<html>
-<head>
-    <title>UmraniGPT Simple</title>
-</head>
-<body style="background-color: #1c1c1e; color: white; font-family: sans-serif; padding: 20px; max-width: 600px; mx-auto: margin: auto;">
-
-    <h2 style="color: #5856d6; text-align: center;">🤖 UmraniGPT Terminal</h2>
-    
-    <!-- Status Display -->
-    <p id="status" style="text-align: center; color: #ff9500; font-size: 14px;">Connecting to Ollama...</p>
-
-    <!-- Chat Box -->
-    <div id="chat-box" style="background: #2c2c2e; padding: 15px; border-radius: 8px; min-height: 150px; max-height: 300px; overflow-y: auto; margin-bottom: 20px; white-space: pre-wrap;">
-        <span style="color: #8e8e93;">System: Waiting for prompt...</span>
-    </div>
-
-    <!-- Input Section -->
-    <div style="display: flex; gap: 10px;">
-        <input type="text" id="user-input" placeholder="Type your message here..." style="flex: 1; padding: 10px; border-radius: 5px; border: none; background: #3a3a3c; color: white;">
-        <button id="send-btn" onclick="askAI()" style="padding: 10px 20px; border-radius: 5px; border: none; background: #5856d6; color: white; font-weight: bold; cursor: pointer;" disabled>Send</button>
-    </div>
-
-    <script>
-        // Aap ka live tunnel link
-        const API_URL = "https://nokia-scan-manor-seafood.trycloudflare.com  ";
-        let modelName = "";
-
-        // Check connection and get model
-        async function checkConnection() {
-            try {
-                const res = await fetch(`${API_URL}/api/tags`);
-                const data = await res.json();
-                if(data.models && data.models.length > 0) {
-                    modelName = data.models[0].name;
-                    document.getElementById("status").innerText = "● Connected to: " + modelName;
-                    document.getElementById("status").style.color = "#34c759";
-                    document.getElementById("send-btn").disabled = false;
-                }
-            } catch (err) {
-                document.getElementById("status").innerText = "❌ Offline (Check PowerShell CMD)";
-                document.getElementById("status").style.color = "#ff3b30";
-            }
-        }
-
-        // Send message to local Ollama AI
-        async function askAI() {
-            const inputField = document.getElementById("user-input");
-            const chatBox = document.getElementById("chat-box");
-            const prompt = inputField.value.trim();
-            
-            if(!prompt) return;
-
-            // Show user message
-            chatBox.innerHTML += `\n\n<b>You:</b> ${prompt}`;
-            inputField.value = "";
-            chatBox.innerHTML += `\n<b>UmraniGPT:</b> Thinking...`;
-
-            try {
-                const res = await fetch(`${API_URL}/api/generate`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model: modelName, prompt: prompt, stream: false })
-                });
-                const data = await res.json();
-                
-                // Replace 'Thinking...' with actual answer
-                const lastIndex = chatBox.innerHTML.lastIndexOf("\n<b>UmraniGPT:</b> Thinking...");
-                chatBox.innerHTML = chatBox.innerHTML.substring(0, lastIndex);
-                chatBox.innerHTML += `\n<b>UmraniGPT:</b> ${data.response}`;
-            } catch (err) {
-                chatBox.innerHTML += `\n<span style="color:red;">Error connecting to your PC.</span>`;
-            }
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        // Run connection test on load
-        checkConnection();
-    </script>
-</body>
-</html>
->>>>>>> 63852631ce6d71d100e275d2c83a9c212d95c8c7

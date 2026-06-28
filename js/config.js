@@ -1,4 +1,3 @@
-﻿// App configuration
 /* ============================================
    UMRANIGPT - Configuration
    ============================================ */
@@ -53,7 +52,7 @@ window.AppConfig = Object.freeze({
 
   /* Storage Keys */
   STORAGE: {
-    BACKEND_URL: 'umrani_backend_url',
+    OLLAMA_URL: 'umrani_ollama_url',
     SETTINGS: 'umrani_settings',
     CHATS: 'umrani_chats',
     CURRENT_CHAT: 'umrani_current_chat',
@@ -76,7 +75,7 @@ window.AppConfig = Object.freeze({
   /* Themes */
   THEMES: ['dark', 'light', 'oled', 'cyber', 'blue', 'purple', 'green', 'glass'],
 
-  /* Backend endpoints */
+  /* Ollama endpoints */
   ENDPOINTS: {
     TAGS: '/api/tags',
     CHAT: '/api/chat',

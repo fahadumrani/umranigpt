@@ -1,4 +1,3 @@
-﻿// Local storage helpers
 /* ============================================
    UMRANIGPT - Storage Module
    ============================================ */
@@ -50,9 +49,9 @@ window.AppStorage = (() => {
     keys.forEach(k => localStorage.removeItem(k));
   };
 
-  /* ---- Backend URL ---- */
-  const getBackendUrl = () => get(STORAGE.BACKEND_URL, '');
-  const setBackendUrl = (url) => set(STORAGE.BACKEND_URL, url);
+  /* ---- Ollama URL ---- */
+  const getOllamaUrl = () => get(STORAGE.OLLAMA_URL, '');
+  const setOllamaUrl = (url) => set(STORAGE.OLLAMA_URL, url);
 
   /* ---- Settings ---- */
   const getSettings = () => {
@@ -234,7 +233,7 @@ window.AppStorage = (() => {
 
   return {
     get, set, remove, clear,
-    getBackendUrl, setBackendUrl,
+    getOllamaUrl, setOllamaUrl,
     getSettings, setSettings, updateSetting,
     getChats, setChats, getChat, saveChat, deleteChat, getAllChats,
     getCurrentChatId, setCurrentChatId,
